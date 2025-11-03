@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <errno.h>
 
-#include "list_setup.h"
+#include "list_private.h"
 
 ListErr_t TextDumpList(List_t* list) {
     assert( list != NULL );
@@ -21,19 +22,19 @@ ListErr_t TextDumpList(List_t* list) {
                 ListSize(list), list->arr.capacity);
     
     for (size_t i = 0; i < list->arr.capacity; i++) {
-        fprintf(fp, "%d ", ListGet(list, i));
+        fprintf(fp, "%d ", RealGet(list, i));
     } fprintf(fp, "\n");
 
     fprintf(fp, "List next: ");
 
     for (size_t i = 0; i < list->arr.capacity; i++) {
-        fprintf(fp, "%zu ", ListNext(list, i));
+        fprintf(fp, "%zu ", RealNext(list, i));
     } fprintf(fp, "\n");
 
     fprintf(fp, "List prev: ");
 
     for (size_t i = 0; i < list->arr.capacity; i++) {
-        fprintf(fp, "%zu ", ListPrev(list, i));
+        fprintf(fp, "%zu ", RealPrev(list, i));
     } fprintf(fp, "\n");
 
     fprintf(fp, "List HEAD: %zu\nList TAIL: %zu\nList FREE: %zu\n", 
@@ -52,6 +53,8 @@ ListErr_t DotVizualizeList(const List_t* list, const char* filename) {
     if (fp == NULL) {
         return LIST_OUTPUT_FAILED; 
     }
+
+    errno = 0;
 
     fprintf(fp, "digraph List {\n\t");
     fprintf(fp, "rankdir=LR;\n\t");
@@ -81,7 +84,7 @@ ListErr_t DotVizualizeList(const List_t* list, const char* filename) {
 
     // list->arr.data[4].next = 6;
 
-    for (size_t cur_pos = FakeElemIdx; cur_pos != ListEnd(list); cur_pos = ListNext(list, cur_pos)) {
+    for (size_t cur_pos = FakeElemIdx; cur_pos != ListEnd(list); cur_pos = RealNext(list, cur_pos)) {
         Node* cur_node  = &list->arr.data[cur_pos];
         Node* next_node = &list->arr.data[cur_node->next];
 
@@ -102,7 +105,7 @@ ListErr_t DotVizualizeList(const List_t* list, const char* filename) {
         size_t cur_pos = ListFront(list);
 
         do {
-            cur_pos = ListNext(list, cur_pos);
+            cur_pos = RealNext(list, cur_pos);
 
             Node* cur_node  = &list->arr.data[cur_pos];
             Node* prev_node = &list->arr.data[cur_node->prev];
@@ -129,9 +132,9 @@ ListErr_t DotVizualizeList(const List_t* list, const char* filename) {
     fprintf(fp, "\n\t");
 
     if (list->free != FakeElemIdx) {
-        for (size_t cur_pos = list->free; ListNext(list, cur_pos) != FakeElemIdx; cur_pos = ListNext(list, cur_pos)) {
+        for (size_t cur_pos = list->free; RealNext(list, cur_pos) != FakeElemIdx; cur_pos = RealNext(list, cur_pos)) {
             fprintf(fp, "node%zu -> node%zu [color=\"purple\", style=bold];\n\t", 
-                        cur_pos, ListNext(list, cur_pos));
+                        cur_pos, RealNext(list, cur_pos));
         }
     }
 
@@ -139,7 +142,7 @@ ListErr_t DotVizualizeList(const List_t* list, const char* filename) {
         fprintf(fp, "node0:f3 -> node%zu:f2 [color=white, dir=both, arrowhead=normal];\n\t",
                     ListFront(list));
         fprintf(fp, "node%zu:f3 -> node%zu:f2 [color=white, arrowhead=normal];\n\t",
-                    ListPrev(list, ListEnd(list)), ListEnd(list));
+                    RealPrev(list, ListEnd(list)), ListEnd(list));
     }
 
     fprintf(fp, "node%zu:f3 -> node%zu:f2 [color=white, arrowhead=normal];\n\t",
@@ -148,8 +151,12 @@ ListErr_t DotVizualizeList(const List_t* list, const char* filename) {
                 ListEnd(list), list->free);
 
     fclose(fp);
-
+        
     system("dot -Tsvg dotstvo.txt > img.svg");
+    if (errno != 0) {
+        fprintf(stderr, "System command failed!\n");
+        return LIST_OUTPUT_FAILED;
+    }
 
     return LIST_OK;
 }
