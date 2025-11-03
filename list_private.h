@@ -22,7 +22,7 @@ struct List_t {
     size_t free;
 };
 
-type RealGet(List_t* list, size_t position);
+type RealGet(const List_t* list, size_t position);
 size_t RealNext(const List_t* list, size_t position);
 size_t RealPrev(const List_t* list, size_t position);
 
