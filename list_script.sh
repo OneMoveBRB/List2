@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source="g++ main.cpp list.cpp dump.cpp -o list"
+source="g++ main.cpp list.cpp list_private.cpp dump.cpp ../stack/stack_alloc.cpp ../stack/stack_funcs.cpp ../stack/stack_protection.cpp ../stack/utils.cpp -o list"
 
 flags=" \
 -D STACK_MODE=STACK_DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-loop-optimizations -Wc++14-compat \
